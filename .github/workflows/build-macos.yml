@@ -45,22 +45,28 @@ jobs:
                       --add-binary "bin/mac/tsMuxeR:." \
                       main.py
 
-      # 6. create-dmgをインストール (macOSランナーではHomebrewが使える)
+    # 6. create-dmgをインストール (macOSランナーではHomebrewが使える)
       - name: Install create-dmg utility
         run: brew install create-dmg
 
-      # 7. .app から .dmg ディスクイメージを作成（オプションを削除して修正）
+      # 7. .app から .dmg ディスクイメージを作成
       - name: .appからmacOS DMGを作成する
         run: |
-          # 必須の引数のみを使用します。
-          # '出力ファイル名.dmg' '入力Appのパス'
+          # .dmg はデフォルトでリポジトリのルートに作成される
           create-dmg \
             'BD-Menu-App-macOS.dmg' \
             'dist/main.app'
-          
+
+      # --- ▼ 追加するステップ: DMGファイルをdistに移動 ▼ ---
+      - name: Move DMG to dist directory
+        run: |
+          # 作成された .dmg を dist/ に移動
+          mv BD-Menu-App-macOS.dmg dist/
+
       # 8. 作成された .dmg をZIPファイルに圧縮
       - name: Create ZIP archive of the .dmg
         run: |
+          # distに移動してから.dmgを圧縮する
           cd dist
           zip -r ../BD-Menu-App-macOS.zip BD-Menu-App-macOS.dmg
 
