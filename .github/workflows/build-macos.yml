@@ -37,43 +37,32 @@ jobs:
           chmod +x bin/mac/ffmpeg
           chmod +x bin/mac/tsMuxeR
 
-      # 5. PyInstallerを実行して .app をビルド
+   # 5. PyInstallerを実行して .app をビルド
       - name: Run PyInstaller to build .app
         run: |
           pyinstaller --windowed \
                       --add-binary "bin/mac/ffmpeg:." \
                       --add-binary "bin/mac/tsMuxeR:." \
                       main.py
-        # --add-binary "SOURCE:DEST"
-        # DESTを "." にすると、.app バンドル内の実行ファイルと同じ場所 (Contents/MacOS) にコピーされます。
-        # (ステップ1の get_base_path() が参照する場所です)
 
-     # --- ▼ 追加するステップ: create-dmgのインストールと実行 ▼ ---
       # 6. create-dmgをインストール (macOSランナーではHomebrewが使える)
       - name: Install create-dmg utility
         run: brew install create-dmg
 
-      # 7. .app から .dmg ディスクイメージを作成
-      - name: Create macOS DMG from .app
+      # 7. .app から .dmg ディスクイメージを作成（オプションを削除して修正）
+      - name: .appからmacOS DMGを作成する
         run: |
+          # 必須の引数のみを使用します。
+          # '出力ファイル名.dmg' '入力Appのパス'
           create-dmg \
-            '--window-title' 'BD-Menu App Installer' \
-            '--icon' 'main.app' 100 150 \
-            '--hide-extension' 'main.app' \
-            '--app-drop-link' 400 150 \
             'BD-Menu-App-macOS.dmg' \
             'dist/main.app'
-        # 出力ファイル名: BD-Menu-App-macOS.dmg
-        # 入力Appパス: dist/main.app
-
-      # --- ▲ 追加するステップ (ここまで) ▲ ---
-
+          
       # 8. 作成された .dmg をZIPファイルに圧縮
-      # (ZIPファイル名とパスを.dmgに合わせます)
       - name: Create ZIP archive of the .dmg
         run: |
           cd dist
-          zip -r ../BD-Menu-App-macOS.zip BD-Menu-App-macOS.dmg # ★ 変更: main.app -> BD-Menu-App-macOS.dmg
+          zip -r ../BD-Menu-App-macOS.zip BD-Menu-App-macOS.dmg
 
       # 9. ビルドの成果物としてZIPファイルをアップロード
       - name: Upload artifact
