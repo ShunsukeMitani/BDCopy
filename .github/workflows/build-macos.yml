@@ -1,0 +1,72 @@
+name: Build macOS App
+
+on:
+  # 'v' で始まるタグがプッシュされた時 (例: v1.0, v1.1) に実行
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build:
+    runs-on: macos-latest # Macの仮想環境で実行
+
+    steps:
+      # 1. リポジトリのコードをチェックアウト
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # 2. Pythonの環境をセットアップ
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10' # PySide6が対応するバージョン
+
+      # 3. 必要なPythonライブラリをインストール
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pyinstaller PySide6
+
+      # 4. リポジトリ内の外部バイナリに実行権限を付与
+      # (Git経由だと実行権限が失われることがあるため)
+      - name: Make external binaries executable
+        run: |
+          chmod +x bin/mac/ffmpeg
+          chmod +x bin/mac/tsMuxeR
+
+      # 5. PyInstallerを実行して .app をビルド
+      - name: Run PyInstaller to build .app
+        run: |
+          pyinstaller --windowed \
+                      --add-binary "bin/mac/ffmpeg:." \
+                      --add-binary "bin/mac/tsMuxeR:." \
+                      main.py
+        # --add-binary "SOURCE:DEST"
+        # DESTを "." にすると、.app バンドル内の実行ファイルと同じ場所 (Contents/MacOS) にコピーされます。
+        # (ステップ1の get_base_path() が参照する場所です)
+
+      # 6. 作成された .app をZIPファイルに圧縮
+      # (.app は実体はフォルダのため、配布用にZIPにします)
+      - name: Create ZIP archive of the .app
+        run: |
+          cd dist
+          zip -r ../BD-Menu-App-macOS.zip main.app
+
+      # 7. ビルドの成果物としてZIPファイルをアップロード
+      # (Actionsタブからダウンロード可能になります)
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: bd-menu-app-macos-zip
+          path: BD-Menu-App-macOS.zip
+          
+      # 8. (オプション) GitHubのリリースにも自動でアップロード
+      - name: Upload to Release
+        if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: BD-Menu-App-macOS.zip
+          asset_name: BD-Menu-App-macOS.zip
+          tag: ${{ github.ref }}
+          overwrite: true

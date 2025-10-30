@@ -1,0 +1,16 @@
+﻿# Ignore PyInstaller folders
+dist/
+build/
+*.spec
+
+# Ignore local build artifacts
+*.iso
+*.m2ts
+*.meta
+menu_image.png
+__pycache__/
+
+# Ignore ALL root-level Windows binaries
+*.dll
+*.exe
+BDSup2Sub.java
