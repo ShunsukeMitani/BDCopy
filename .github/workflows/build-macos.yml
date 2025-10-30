@@ -48,22 +48,40 @@ jobs:
         # DESTを "." にすると、.app バンドル内の実行ファイルと同じ場所 (Contents/MacOS) にコピーされます。
         # (ステップ1の get_base_path() が参照する場所です)
 
-      # 6. 作成された .app をZIPファイルに圧縮
-      # (.app は実体はフォルダのため、配布用にZIPにします)
-      - name: Create ZIP archive of the .app
+     # --- ▼ 追加するステップ: create-dmgのインストールと実行 ▼ ---
+      # 6. create-dmgをインストール (macOSランナーではHomebrewが使える)
+      - name: Install create-dmg utility
+        run: brew install create-dmg
+
+      # 7. .app から .dmg ディスクイメージを作成
+      - name: Create macOS DMG from .app
+        run: |
+          create-dmg \
+            '--window-title' 'BD-Menu App Installer' \
+            '--icon' 'main.app' 100 150 \
+            '--hide-extension' 'main.app' \
+            '--app-drop-link' 400 150 \
+            'BD-Menu-App-macOS.dmg' \
+            'dist/main.app'
+        # 出力ファイル名: BD-Menu-App-macOS.dmg
+        # 入力Appパス: dist/main.app
+
+      # --- ▲ 追加するステップ (ここまで) ▲ ---
+
+      # 8. 作成された .dmg をZIPファイルに圧縮
+      # (ZIPファイル名とパスを.dmgに合わせます)
+      - name: Create ZIP archive of the .dmg
         run: |
           cd dist
-          zip -r ../BD-Menu-App-macOS.zip main.app
+          zip -r ../BD-Menu-App-macOS.zip BD-Menu-App-macOS.dmg # ★ 変更: main.app -> BD-Menu-App-macOS.dmg
 
-      # 7. ビルドの成果物としてZIPファイルをアップロード
-      # (Actionsタブからダウンロード可能になります)
+      # 9. ビルドの成果物としてZIPファイルをアップロード
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: bd-menu-app-macos-zip
           path: BD-Menu-App-macOS.zip
-          
-      # 8. (オプション) GitHubのリリースにも自動でアップロード
+          # 10. (オプション) GitHubのリリースにも自動でアップロード
       - name: Upload to Release
         if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
         uses: svenstaro/upload-release-action@v2
