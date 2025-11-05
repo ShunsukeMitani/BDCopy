@@ -8,7 +8,7 @@ on:
 jobs:
   build-macos:
     # Intel Mac (x86_64)互換のバイナリを生成するため、macOS 11 (Intel互換ランナー) を指定
-    runs-on: macos-12
+    runs-on: macos-latest
 
     steps:
     - name: Checkout repository
