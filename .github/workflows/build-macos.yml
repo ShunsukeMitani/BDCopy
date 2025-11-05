@@ -7,7 +7,8 @@ on:
 
 jobs:
   build-macos:
-    runs-on: macos-latest
+    # Intel Mac (x86_64)互換のバイナリを生成するため、macOS 11 (Intel互換ランナー) を指定
+    runs-on: macos-11
 
     steps:
     - name: Checkout repository
@@ -27,25 +28,29 @@ jobs:
       run: brew install create-dmg
 
     # --- ▼▼▼【ここから修正】▼▼▼ ---
+    # ffmpeg/ffprobe は Homebrew でインストールし、tsMuxeRはGitから取得したものを使用
     - name: Install external tools (ffmpeg) and Prepare binaries for PyInstaller
       run: |
-        # 1. brewでffmpegとffprobeのみをインストール
+        # 1. brewでffmpegとffprobeをインストール (Intelバイナリになる)
         brew install ffmpeg
 
-        # 2. ffmpeg, ffprobeをbin_macosにコピー
-        #    （bin_macosフォルダはローカルで作成・tsMuxeRが既に存在すると想定）
-        #    （もしbin_macosが存在しない場合のために、一応作成コマンドを追加）
+        # 2. bin_macos フォルダを作成
+        #    （tsMuxeRバイナリが既にGitで取得されている前提）
         mkdir -p bin_macos
+        
+        # 3. ffmpeg, ffprobeをbin_macosにコピー
         cp $(which ffmpeg) bin_macos/ffmpeg
         cp $(which ffprobe) bin_macos/ffprobe
         
-        # 3. Gitで取得したtsMuxeRを含め、すべてのバイナリに実行権限を付与
+        # 4. Gitで取得したtsMuxeRを含め、すべてのバイナリに実行権限を付与
+        #    （tsMuxeRはGit LFSを使わない場合、事前にGitにプッシュが必要です）
         chmod +x bin_macos/*
         echo "All required binaries prepared in ./bin_macos/."
+    # --- ▲▲▲【修正完了】▲▲▲ ---
 
     - name: Build the .app with PyInstaller
       run: |
-        # このステップは以前と同じです
+        # このステップは以前と同じですが、Intelランナー上で実行されるためIntel互換バイナリが生成されます
         pyinstaller main.py \
           --noconsole \
           --windowed \
