@@ -27,21 +27,23 @@ jobs:
       run: brew install create-dmg
 
     # --- ▼▼▼【ここから修正】▼▼▼ ---
-    - name: Install external tools (ffmpeg, tsMuxeR)
+    - name: Install external tools (ffmpeg) and Prepare binaries for PyInstaller
       run: |
+        # 1. brewでffmpegとffprobeをインストール (tsMuxeRはGit LFSで取得済み)
         brew install ffmpeg
-        brew install --cask tsmuxer
 
-    - name: Prepare binaries for PyInstaller
-      run: |
-        # PyInstaller が .app に同梱できるように、
-        # インストールしたバイナリを bin_macos フォルダにコピーする
+        # 2. bin_macos フォルダを作成
         mkdir -p bin_macos
+        
+        # 3. ffmpeg, ffprobeをbin_macosにコピー
         cp $(which ffmpeg) bin_macos/ffmpeg
         cp $(which ffprobe) bin_macos/ffprobe
-        cp /Applications/tsMuxeR.app/Contents/MacOS/tsMuxeR bin_macos/tsMuxeR
+        
+        # 4. Git LFSで取得したtsMuxeRを含め、すべてのバイナリに実行権限を付与
+        #    (tsMuxeRはactions/checkout@v4で自動的に取得されています)
         chmod +x bin_macos/*
-        echo "Binaries prepared in ./bin_macos/"
+        echo "All required binaries prepared in ./bin_macos/ and set executable."
+    # --- ▲▲▲【修正完了】▲▲▲ ---
     # --- ▲▲▲【修正完了】▲▲▲ ---
 
     - name: Build the .app with PyInstaller
