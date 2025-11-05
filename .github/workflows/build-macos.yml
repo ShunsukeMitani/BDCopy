@@ -29,22 +29,19 @@ jobs:
     # --- ▼▼▼【ここから修正】▼▼▼ ---
     - name: Install external tools (ffmpeg) and Prepare binaries for PyInstaller
       run: |
-        # 1. brewでffmpegとffprobeをインストール (tsMuxeRはGit LFSで取得済み)
+        # 1. brewでffmpegとffprobeのみをインストール
         brew install ffmpeg
 
-        # 2. bin_macos フォルダを作成
+        # 2. ffmpeg, ffprobeをbin_macosにコピー
+        #    （bin_macosフォルダはローカルで作成・tsMuxeRが既に存在すると想定）
+        #    （もしbin_macosが存在しない場合のために、一応作成コマンドを追加）
         mkdir -p bin_macos
-        
-        # 3. ffmpeg, ffprobeをbin_macosにコピー
         cp $(which ffmpeg) bin_macos/ffmpeg
         cp $(which ffprobe) bin_macos/ffprobe
         
-        # 4. Git LFSで取得したtsMuxeRを含め、すべてのバイナリに実行権限を付与
-        #    (tsMuxeRはactions/checkout@v4で自動的に取得されています)
+        # 3. Gitで取得したtsMuxeRを含め、すべてのバイナリに実行権限を付与
         chmod +x bin_macos/*
-        echo "All required binaries prepared in ./bin_macos/ and set executable."
-    # --- ▲▲▲【修正完了】▲▲▲ ---
-    # --- ▲▲▲【修正完了】▲▲▲ ---
+        echo "All required binaries prepared in ./bin_macos/."
 
     - name: Build the .app with PyInstaller
       run: |

@@ -3,5 +3,4 @@ dist/
 *.spec
 *.exe
 *.dll
-bin_macos/
 __pycache__/
