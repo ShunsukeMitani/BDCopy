@@ -1,0 +1,74 @@
+name: Build macOS DMG
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build-macos:
+    runs-on: macos-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+
+    - name: Install Python dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install PySide6 pyinstaller
+    
+    - name: Install create-dmg
+      run: brew install create-dmg
+
+    # --- ▼▼▼【ここから修正】▼▼▼ ---
+    - name: Install external tools (ffmpeg, tsMuxeR)
+      run: |
+        brew install ffmpeg
+        brew install --cask tsmuxer
+
+    - name: Prepare binaries for PyInstaller
+      run: |
+        # PyInstaller が .app に同梱できるように、
+        # インストールしたバイナリを bin_macos フォルダにコピーする
+        mkdir -p bin_macos
+        cp $(which ffmpeg) bin_macos/ffmpeg
+        cp $(which ffprobe) bin_macos/ffprobe
+        cp /Applications/tsMuxeR.app/Contents/MacOS/tsMuxeR bin_macos/tsMuxeR
+        chmod +x bin_macos/*
+        echo "Binaries prepared in ./bin_macos/"
+    # --- ▲▲▲【修正完了】▲▲▲ ---
+
+    - name: Build the .app with PyInstaller
+      run: |
+        # このステップは以前と同じです
+        pyinstaller main.py \
+          --noconsole \
+          --windowed \
+          --name BDCreator \
+          --add-data "bin_macos/ffmpeg:." \
+          --add-data "bin_macos/ffprobe:." \
+          --add-data "bin_macos/tsMuxeR:."
+          # --icon=YourIcon.icns
+
+    - name: Create .dmg
+      run: |
+        create-dmg \
+          --volname "BDCreator" \
+          --window-pos 200 120 \
+          --window-size 800 400 \
+          --icon-size 100 \
+          --app-drop-link 600 185 \
+          "dist/BDCreator.dmg" \
+          "dist/BDCreator.app"
+
+    - name: Upload DMG Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: BDCreator-macOS.dmg
+        path: dist/BDCreator.dmg
